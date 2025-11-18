@@ -5,6 +5,8 @@
 
 class Programmatic_SEO_Admin_Advanced {
     private static $instance = null;
+    private $template_ui;
+    private $datasource_ui;
 
     public static function get_instance() {
         if (self::$instance === null) {
@@ -14,7 +16,12 @@ class Programmatic_SEO_Admin_Advanced {
     }
 
     private function __construct() {
+        $this->template_ui = Programmatic_SEO_Template_UI::get_instance();
+        $this->datasource_ui = Programmatic_SEO_DataSource_UI::get_instance();
+
         add_action('admin_menu', array($this, 'add_menus'));
+        add_action('admin_post_save_template', array($this, 'handle_template_save'));
+        add_action('admin_post_save_datasource', array($this, 'handle_datasource_save'));
     }
 
     /**
@@ -66,121 +73,136 @@ class Programmatic_SEO_Admin_Advanced {
      * Render templates page
      */
     public function render_templates_page() {
-        if (!current_user_can('manage_options')) {
-            wp_die(__('You do not have sufficient permissions to access this page.', 'programmatic-seo'));
+        $action = isset($_GET['action']) ? sanitize_text_field($_GET['action']) : 'list';
+
+        if ($action === 'new' || $action === 'edit') {
+            $this->template_ui->render_form_page();
+        } else {
+            $this->template_ui->render_list_page();
         }
-
-        $template_manager = Programmatic_SEO_Template_Manager::get_instance();
-        $templates = $template_manager->get_templates();
-        ?>
-        <div class="wrap">
-            <h1><?php echo esc_html(get_admin_page_title()); ?></h1>
-
-            <p>
-                <a href="<?php echo esc_url(admin_url('admin.php?page=programmatic-seo-templates&action=new')); ?>" class="button button-primary">
-                    <?php _e('Create New Template', 'programmatic-seo'); ?>
-                </a>
-            </p>
-
-            <table class="wp-list-table widefat striped">
-                <thead>
-                    <tr>
-                        <th><?php _e('Name', 'programmatic-seo'); ?></th>
-                        <th><?php _e('Slug', 'programmatic-seo'); ?></th>
-                        <th><?php _e('Post Type', 'programmatic-seo'); ?></th>
-                        <th><?php _e('Created', 'programmatic-seo'); ?></th>
-                        <th><?php _e('Actions', 'programmatic-seo'); ?></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if (!empty($templates)): ?>
-                        <?php foreach ($templates as $template): ?>
-                            <tr>
-                                <td><?php echo esc_html($template->name); ?></td>
-                                <td><code><?php echo esc_html($template->slug); ?></code></td>
-                                <td><?php echo esc_html($template->post_type); ?></td>
-                                <td><?php echo esc_html($template->created_at); ?></td>
-                                <td>
-                                    <a href="<?php echo esc_url(admin_url('admin.php?page=programmatic-seo-templates&action=edit&id=' . $template->id)); ?>">
-                                        <?php _e('Edit', 'programmatic-seo'); ?>
-                                    </a> |
-                                    <a href="<?php echo esc_url(wp_nonce_url(admin_url('admin-ajax.php?action=prgr_seo_delete_template&id=' . $template->id), 'delete_template')); ?>" onclick="return confirm('<?php _e('Are you sure?', 'programmatic-seo'); ?>')">
-                                        <?php _e('Delete', 'programmatic-seo'); ?>
-                                    </a>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    <?php else: ?>
-                        <tr>
-                            <td colspan="5"><?php _e('No templates found. Create one to get started.', 'programmatic-seo'); ?></td>
-                        </tr>
-                    <?php endif; ?>
-                </tbody>
-            </table>
-        </div>
-        <?php
     }
 
     /**
      * Render data sources page
      */
     public function render_datasources_page() {
+        $action = isset($_GET['action']) ? sanitize_text_field($_GET['action']) : 'list';
+
+        if ($action === 'new' || $action === 'edit') {
+            $this->datasource_ui->render_form_page();
+        } else {
+            $this->datasource_ui->render_list_page();
+        }
+    }
+
+    /**
+     * Handle template save
+     */
+    public function handle_template_save() {
+        check_admin_referer('save_template');
+
         if (!current_user_can('manage_options')) {
-            wp_die(__('You do not have sufficient permissions to access this page.', 'programmatic-seo'));
+            wp_die(__('You do not have sufficient permissions', 'programmatic-seo'));
+        }
+
+        $template_manager = Programmatic_SEO_Template_Manager::get_instance();
+        $action = sanitize_text_field($_POST['action'] ?? '');
+        $template_id = intval($_POST['template_id'] ?? 0);
+
+        $data = array(
+            'name' => sanitize_text_field($_POST['name'] ?? ''),
+            'slug' => sanitize_title($_POST['slug'] ?? ''),
+            'description' => wp_kses_post($_POST['description'] ?? ''),
+            'post_type' => sanitize_text_field($_POST['post_type'] ?? 'post'),
+            'title_template' => wp_kses_post($_POST['title_template'] ?? ''),
+            'description_template' => wp_kses_post($_POST['description_template'] ?? ''),
+            'keywords_template' => wp_kses_post($_POST['keywords_template'] ?? ''),
+            'content_template' => wp_kses_post($_POST['content_template'] ?? ''),
+            'schema_template' => wp_kses_post($_POST['schema_template'] ?? ''),
+            'featured_image_field' => sanitize_text_field($_POST['featured_image_field'] ?? ''),
+        );
+
+        // Validate
+        if (empty($data['name'])) {
+            $this->redirect_with_error(__('Template name is required', 'programmatic-seo'));
+            return;
+        }
+
+        if (empty($data['slug'])) {
+            $data['slug'] = sanitize_title($data['name']);
+        }
+
+        // Auto-generate slug if empty
+        if (empty($data['slug'])) {
+            $data['slug'] = sanitize_title($data['name']);
+        }
+
+        try {
+            if ($action === 'edit' && $template_id) {
+                $template_manager->update_template($template_id, $data);
+                $this->redirect_with_message(__('Template updated successfully', 'programmatic-seo'));
+            } else {
+                $template_id = $template_manager->create_template($data);
+                if ($template_id) {
+                    $this->redirect_with_message(__('Template created successfully', 'programmatic-seo'), $template_id);
+                } else {
+                    $this->redirect_with_error(__('Failed to create template', 'programmatic-seo'));
+                }
+            }
+        } catch (Exception $e) {
+            $this->redirect_with_error($e->getMessage());
+        }
+    }
+
+    /**
+     * Handle data source save
+     */
+    public function handle_datasource_save() {
+        check_admin_referer('save_datasource');
+
+        if (!current_user_can('manage_options')) {
+            wp_die(__('You do not have sufficient permissions', 'programmatic-seo'));
         }
 
         $data_source = Programmatic_SEO_Data_Source::get_instance();
-        $sources = $data_source->get_sources();
-        ?>
-        <div class="wrap">
-            <h1><?php echo esc_html(get_admin_page_title()); ?></h1>
+        $action = sanitize_text_field($_POST['action'] ?? '');
+        $source_id = intval($_POST['datasource_id'] ?? 0);
+        $type = sanitize_text_field($_POST['type'] ?? 'csv');
 
-            <p>
-                <a href="<?php echo esc_url(admin_url('admin.php?page=programmatic-seo-datasources&action=new')); ?>" class="button button-primary">
-                    <?php _e('Add New Data Source', 'programmatic-seo'); ?>
-                </a>
-            </p>
+        $data = array(
+            'name' => sanitize_text_field($_POST['name'] ?? ''),
+            'type' => $type,
+            'csv_file_path' => sanitize_file_name($_POST['csv_file_path'] ?? ''),
+            'json_data' => wp_kses_post($_POST['json_data'] ?? '[]'),
+            'api_endpoint' => esc_url_raw($_POST['api_endpoint'] ?? ''),
+            'api_method' => sanitize_text_field($_POST['api_method'] ?? 'GET'),
+            'api_headers' => wp_kses_post($_POST['api_headers'] ?? '{}'),
+            'api_params' => wp_kses_post($_POST['api_params'] ?? '{}'),
+            'field_mapping' => wp_kses_post($_POST['field_mapping'] ?? '{}'),
+        );
 
-            <table class="wp-list-table widefat striped">
-                <thead>
-                    <tr>
-                        <th><?php _e('Name', 'programmatic-seo'); ?></th>
-                        <th><?php _e('Type', 'programmatic-seo'); ?></th>
-                        <th><?php _e('Last Synced', 'programmatic-seo'); ?></th>
-                        <th><?php _e('Created', 'programmatic-seo'); ?></th>
-                        <th><?php _e('Actions', 'programmatic-seo'); ?></th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if (!empty($sources)): ?>
-                        <?php foreach ($sources as $source): ?>
-                            <tr>
-                                <td><?php echo esc_html($source->name); ?></td>
-                                <td><span class="badge badge-<?php echo esc_attr($source->type); ?>"><?php echo esc_html(strtoupper($source->type)); ?></span></td>
-                                <td><?php echo $source->last_synced ? esc_html($source->last_synced) : '—'; ?></td>
-                                <td><?php echo esc_html(date_i18n(get_option('date_format'), strtotime($source->created_at))); ?></td>
-                                <td>
-                                    <a href="<?php echo esc_url(admin_url('admin.php?page=programmatic-seo-datasources&action=edit&id=' . $source->id)); ?>">
-                                        <?php _e('Edit', 'programmatic-seo'); ?>
-                                    </a> |
-                                    <a href="<?php echo esc_url(wp_nonce_url(admin_url('admin-ajax.php?action=prgr_seo_sync_datasource&id=' . $source->id), 'sync_datasource')); ?>">
-                                        <?php _e('Sync', 'programmatic-seo'); ?>
-                                    </a> |
-                                    <a href="<?php echo esc_url(wp_nonce_url(admin_url('admin-ajax.php?action=prgr_seo_delete_datasource&id=' . $source->id), 'delete_datasource')); ?>" onclick="return confirm('<?php _e('Are you sure?', 'programmatic-seo'); ?>')">
-                                        <?php _e('Delete', 'programmatic-seo'); ?>
-                                    </a>
-                                </td>
-                            </tr>
-                        <?php endforeach; ?>
-                    <?php else: ?>
-                        <tr>
-                            <td colspan="5"><?php _e('No data sources found. Add one to start generating pages.', 'programmatic-seo'); ?></td>
-                        </tr>
-                    <?php endif; ?>
-                </tbody>
-            </table>
-        </div>
-        <?php
+        // Validate
+        $validation = $data_source->validate_source($data);
+        if ($validation !== true) {
+            $this->redirect_with_error(implode(', ', $validation));
+            return;
+        }
+
+        try {
+            if ($action === 'edit' && $source_id) {
+                $data_source->update_source($source_id, $data);
+                $this->redirect_with_message(__('Data source updated successfully', 'programmatic-seo'));
+            } else {
+                $source_id = $data_source->create_source($data);
+                if ($source_id) {
+                    $this->redirect_with_message(__('Data source created successfully', 'programmatic-seo'));
+                } else {
+                    $this->redirect_with_error(__('Failed to create data source', 'programmatic-seo'));
+                }
+            }
+        } catch (Exception $e) {
+            $this->redirect_with_error($e->getMessage());
+        }
     }
 
     /**
@@ -221,7 +243,7 @@ class Programmatic_SEO_Admin_Advanced {
             </div>
 
             <h2><?php _e('Generate Pages', 'programmatic-seo'); ?></h2>
-            <form method="post" action="<?php echo esc_url(admin_url('admin-ajax.php')); ?>">
+            <form method="post" action="<?php echo esc_url(admin_url('admin-ajax.php')); ?>" class="programmatic-seo-form">
                 <?php wp_nonce_field('prgr_seo_generate_pages'); ?>
                 <input type="hidden" name="action" value="prgr_seo_generate_pages">
 
@@ -367,5 +389,25 @@ class Programmatic_SEO_Admin_Advanced {
             </table>
         </div>
         <?php
+    }
+
+    /**
+     * Redirect with message
+     */
+    private function redirect_with_message($message, $template_id = null) {
+        $redirect_url = add_query_arg('message', urlencode($message), admin_url('admin.php?page=programmatic-seo-templates'));
+        wp_safe_remote_post($redirect_url);
+        wp_redirect($redirect_url);
+        exit;
+    }
+
+    /**
+     * Redirect with error
+     */
+    private function redirect_with_error($error) {
+        $redirect_url = add_query_arg('error', urlencode($error), admin_url('admin.php?page=programmatic-seo-templates'));
+        wp_safe_remote_post($redirect_url);
+        wp_redirect($redirect_url);
+        exit;
     }
 }

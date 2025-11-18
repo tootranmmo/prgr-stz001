@@ -84,8 +84,11 @@ class Programmatic_SEO {
         require_once PROGRAMMATIC_SEO_INCLUDES_DIR . 'class-internal-linking.php';
         require_once PROGRAMMATIC_SEO_INCLUDES_DIR . 'class-analytics.php';
 
-        // Admin
+        // Admin & UI
         require_once PROGRAMMATIC_SEO_INCLUDES_DIR . 'class-admin-settings.php';
+        require_once PROGRAMMATIC_SEO_INCLUDES_DIR . 'class-template-ui.php';
+        require_once PROGRAMMATIC_SEO_INCLUDES_DIR . 'class-datasource-ui.php';
+        require_once PROGRAMMATIC_SEO_INCLUDES_DIR . 'class-ajax-handlers.php';
         require_once PROGRAMMATIC_SEO_INCLUDES_DIR . 'class-admin-advanced.php';
     }
 
@@ -200,6 +203,7 @@ class Programmatic_SEO {
         // Always initialize admin advanced
         if (is_admin()) {
             Programmatic_SEO_Admin_Advanced::get_instance();
+            Programmatic_SEO_AJAX_Handlers::get_instance();
         }
     }
 
