@@ -165,7 +165,7 @@ class Programmatic_SEO_DataSource_UI {
         <div class="wrap">
             <h1><?php echo $action === 'edit' ? __('Edit Data Source', 'programmatic-seo') : __('Create New Data Source', 'programmatic-seo'); ?></h1>
 
-            <form method="post" id="datasource-form" class="programmatic-seo-form" enctype="multipart/form-data">
+            <form method="post" action="<?php echo esc_url(admin_url('admin.php?action=save_datasource')); ?>" id="datasource-form" class="programmatic-seo-form" enctype="multipart/form-data">
                 <?php wp_nonce_field('save_datasource'); ?>
                 <input type="hidden" name="action" value="<?php echo esc_attr($action); ?>">
                 <?php if ($source): ?>

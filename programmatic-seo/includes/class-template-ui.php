@@ -147,7 +147,7 @@ class Programmatic_SEO_Template_UI {
         <div class="wrap">
             <h1><?php echo $action === 'edit' ? __('Edit Template', 'programmatic-seo') : __('Create New Template', 'programmatic-seo'); ?></h1>
 
-            <form method="post" id="template-form" class="programmatic-seo-form">
+            <form method="post" action="<?php echo esc_url(admin_url('admin.php?action=save_template')); ?>" id="template-form" class="programmatic-seo-form">
                 <?php wp_nonce_field('save_template'); ?>
                 <input type="hidden" name="action" value="<?php echo esc_attr($action); ?>">
                 <?php if ($template): ?>

@@ -396,7 +396,6 @@ class Programmatic_SEO_Admin_Advanced {
      */
     private function redirect_with_message($message, $template_id = null) {
         $redirect_url = add_query_arg('message', urlencode($message), admin_url('admin.php?page=programmatic-seo-templates'));
-        wp_safe_remote_post($redirect_url);
         wp_redirect($redirect_url);
         exit;
     }
@@ -406,7 +405,6 @@ class Programmatic_SEO_Admin_Advanced {
      */
     private function redirect_with_error($error) {
         $redirect_url = add_query_arg('error', urlencode($error), admin_url('admin.php?page=programmatic-seo-templates'));
-        wp_safe_remote_post($redirect_url);
         wp_redirect($redirect_url);
         exit;
     }
