@@ -1,0 +1,107 @@
+/* Programmatic SEO Admin Styles */
+
+.programmatic-seo-dashboard {
+    margin-top: 20px;
+}
+
+.programmatic-seo-dashboard .dashboard-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.programmatic-seo-dashboard .card {
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 20px;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+
+.programmatic-seo-dashboard .card h3 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 14px;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.programmatic-seo-dashboard .card p {
+    margin: 0;
+    font-size: 32px;
+    font-weight: bold;
+    color: #0073aa;
+}
+
+.programmatic-seo-dashboard .dashboard-actions {
+    margin-top: 20px;
+}
+
+.wrap table.form-table td {
+    padding: 15px 10px;
+}
+
+.wrap table.form-table th {
+    padding: 15px 10px;
+    font-weight: 600;
+}
+
+.wrap input[type="checkbox"] {
+    cursor: pointer;
+}
+
+.wrap input[type="text"] {
+    width: 300px;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.wrap .card {
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.04);
+}
+
+.wrap .card h2 {
+    margin-top: 0;
+    margin-bottom: 15px;
+}
+
+.wrap .card ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.wrap .card li {
+    padding: 8px 0;
+}
+
+.wrap .card a {
+    color: #0073aa;
+    text-decoration: none;
+}
+
+.wrap .card a:hover {
+    text-decoration: underline;
+}
+
+.wrap .description {
+    color: #666;
+    font-size: 13px;
+    margin-top: 5px;
+}
+
+.wrap code {
+    background: #f5f5f5;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    padding: 2px 6px;
+    font-family: monospace;
+}
