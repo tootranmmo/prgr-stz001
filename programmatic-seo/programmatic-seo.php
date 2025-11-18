@@ -2,8 +2,8 @@
 /**
  * Plugin Name: Programmatic SEO
  * Plugin URI: https://github.com/tootranmmo/programmatic-seo
- * Description: Advanced SEO plugin with programmatic meta tags, XML sitemap, structured data, and social media optimization
- * Version: 1.0.0
+ * Description: Advanced SEO plugin with template management, automatic page generation, meta automation, schema markup, internal linking, and analytics
+ * Version: 2.0.0
  * Author: Programmatic SEO Team
  * Author URI: https://github.com/tootranmmo
  * License: GPL v2 or later
@@ -20,7 +20,7 @@ if (!defined('ABSPATH')) {
 }
 
 // Define plugin constants
-define('PROGRAMMATIC_SEO_VERSION', '1.0.0');
+define('PROGRAMMATIC_SEO_VERSION', '2.0.0');
 define('PROGRAMMATIC_SEO_PLUGIN_DIR', plugin_dir_path(__FILE__));
 define('PROGRAMMATIC_SEO_PLUGIN_URL', plugin_dir_url(__FILE__));
 define('PROGRAMMATIC_SEO_INCLUDES_DIR', PROGRAMMATIC_SEO_PLUGIN_DIR . 'includes/');
@@ -68,11 +68,25 @@ class Programmatic_SEO {
      * Require all plugin classes
      */
     private function require_classes() {
+        // Core classes
+        require_once PROGRAMMATIC_SEO_INCLUDES_DIR . 'class-database.php';
         require_once PROGRAMMATIC_SEO_INCLUDES_DIR . 'class-meta-tags.php';
         require_once PROGRAMMATIC_SEO_INCLUDES_DIR . 'class-sitemap.php';
         require_once PROGRAMMATIC_SEO_INCLUDES_DIR . 'class-schema.php';
         require_once PROGRAMMATIC_SEO_INCLUDES_DIR . 'class-social-meta.php';
+
+        // Advanced features
+        require_once PROGRAMMATIC_SEO_INCLUDES_DIR . 'class-template-manager.php';
+        require_once PROGRAMMATIC_SEO_INCLUDES_DIR . 'class-data-source.php';
+        require_once PROGRAMMATIC_SEO_INCLUDES_DIR . 'class-page-generator.php';
+        require_once PROGRAMMATIC_SEO_INCLUDES_DIR . 'class-seo-automation.php';
+        require_once PROGRAMMATIC_SEO_INCLUDES_DIR . 'class-schema-generator.php';
+        require_once PROGRAMMATIC_SEO_INCLUDES_DIR . 'class-internal-linking.php';
+        require_once PROGRAMMATIC_SEO_INCLUDES_DIR . 'class-analytics.php';
+
+        // Admin
         require_once PROGRAMMATIC_SEO_INCLUDES_DIR . 'class-admin-settings.php';
+        require_once PROGRAMMATIC_SEO_INCLUDES_DIR . 'class-admin-advanced.php';
     }
 
     /**
@@ -100,7 +114,14 @@ class Programmatic_SEO {
      * Plugin activation
      */
     public static function activate() {
-        // Create necessary database tables or options
+        // Load database class
+        require_once PROGRAMMATIC_SEO_INCLUDES_DIR . 'class-database.php';
+
+        // Create database tables
+        $db = Programmatic_SEO_Database::get_instance();
+        $db->create_tables();
+
+        // Create necessary plugin options
         if (!get_option('programmatic_seo_settings')) {
             add_option('programmatic_seo_settings', array(
                 'enable_meta_tags' => true,
@@ -108,6 +129,10 @@ class Programmatic_SEO {
                 'enable_schema' => true,
                 'enable_social_meta' => true,
                 'enable_robots_txt' => true,
+                'enable_templates' => true,
+                'enable_page_generator' => true,
+                'enable_internal_linking' => true,
+                'enable_analytics' => true,
             ));
         }
 
@@ -145,6 +170,36 @@ class Programmatic_SEO {
         // Initialize Social Meta handler
         if ($this->is_feature_enabled('enable_social_meta')) {
             Programmatic_SEO_Social_Meta::get_instance();
+        }
+
+        // Initialize advanced features
+        if ($this->is_feature_enabled('enable_templates')) {
+            Programmatic_SEO_Template_Manager::get_instance();
+        }
+
+        if ($this->is_feature_enabled('enable_page_generator')) {
+            Programmatic_SEO_Page_Generator::get_instance();
+        }
+
+        if ($this->is_feature_enabled('enable_seo_automation')) {
+            Programmatic_SEO_Automation::get_instance();
+        }
+
+        if ($this->is_feature_enabled('enable_schema_generator')) {
+            Programmatic_SEO_Schema_Generator::get_instance();
+        }
+
+        if ($this->is_feature_enabled('enable_internal_linking')) {
+            Programmatic_SEO_Internal_Linking::get_instance();
+        }
+
+        if ($this->is_feature_enabled('enable_analytics')) {
+            Programmatic_SEO_Analytics::get_instance();
+        }
+
+        // Always initialize admin advanced
+        if (is_admin()) {
+            Programmatic_SEO_Admin_Advanced::get_instance();
         }
     }
 

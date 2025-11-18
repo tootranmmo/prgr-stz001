@@ -53,6 +53,8 @@ class Programmatic_SEO_Sitemap {
         if ($type === '1') {
             // Posts sitemap
             $this->add_posts_to_sitemap();
+            // Add generated pages
+            $this->add_generated_pages_to_sitemap();
         } elseif ($type === 'pages') {
             // Pages sitemap
             $this->add_pages_to_sitemap();
@@ -62,6 +64,9 @@ class Programmatic_SEO_Sitemap {
         } elseif ($type === 'tags') {
             // Tags sitemap
             $this->add_tags_to_sitemap();
+        } elseif ($type === 'generated') {
+            // Generated pages sitemap
+            $this->add_generated_pages_to_sitemap();
         }
 
         echo '</urlset>';
@@ -153,6 +158,27 @@ class Programmatic_SEO_Sitemap {
         echo '    <changefreq>weekly</changefreq>' . "\n";
         echo '    <priority>0.8</priority>' . "\n";
         echo '  </url>' . "\n";
+    }
+
+    /**
+     * Add generated pages to sitemap
+     */
+    private function add_generated_pages_to_sitemap() {
+        global $wpdb;
+        $generated_pages_table = $wpdb->prefix . 'programmatic_seo_generated_pages';
+
+        $results = $wpdb->get_results(
+            "SELECT p.ID, p.post_modified FROM {$wpdb->posts} p
+            INNER JOIN $generated_pages_table gp ON p.ID = gp.post_id
+            WHERE p.post_status = 'publish'
+            ORDER BY p.post_modified DESC"
+        );
+
+        if ($results) {
+            foreach ($results as $post) {
+                $this->add_url_to_sitemap(get_permalink($post->ID), get_date_from_gmt($post->post_modified, 'c'));
+            }
+        }
     }
 
     /**
